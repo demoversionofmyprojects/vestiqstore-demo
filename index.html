@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Vestiq Store</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --soft: #eef2f9;
+    --line: #dbe2ee;
+    --text: #0a1428;
+    --muted: #6b7891;
+    --blue: #1d4ed8;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter Tight', system-ui, sans-serif; }
+  body { padding-bottom: 24px; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
+
+  header { position: sticky; top: 0; z-index: 5; background: #fff; padding: 14px 16px 0; border-bottom: 2px solid var(--text); }
+  .top { display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-weight: 900; font-size: 24px; letter-spacing: -.04em; text-transform: uppercase; line-height: 1; }
+  .logo span { color: var(--blue); }
+  .sub { font-family: var(--mono); color: var(--muted); font-size: 10px; margin-top: 5px; text-transform: uppercase; letter-spacing: .06em; }
+  .actions { display: flex; gap: 18px; }
+  .icon-btn { position: relative; display: flex; align-items: center; height: 40px; }
+  .icon-btn svg { width: 24px; height: 24px; }
+  .icon-btn.fav-on { color: var(--blue); }
+  .icon-btn.fav-on svg path { fill: currentColor; }
+  .badge { position: absolute; top: 2px; right: -9px; min-width: 16px; height: 16px; padding: 0 4px; background: var(--blue); color: #fff; font-family: var(--mono); font-size: 10px; font-weight: 700; display: grid; place-items: center; }
+  .badge:empty { display: none; }
+
+  .search { margin-top: 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); height: 46px; }
+  .search:focus-within { border-color: var(--blue); }
+  .search input { flex: 1; min-width: 0; border: 0; outline: none; background: none; font: inherit; font-size: 16px; font-weight: 500; color: var(--text); }
+  .search input::placeholder { color: #9aa6bd; }
+  .search svg { width: 20px; height: 20px; flex: none; }
+
+  .chips { display: flex; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; padding: 14px 12px 12px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-bottom: 3px solid transparent; margin-bottom: -2px; }
+  .chip:first-child { padding-left: 0; }
+  .chip sup { font-family: var(--mono); font-size: 9px; margin-left: 2px; }
+  .chip.active { color: var(--text); border-color: var(--blue); }
+
+  .bar { display: flex; justify-content: space-between; padding: 12px 16px; font-family: var(--mono); font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
+
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .card { text-align: left; display: flex; flex-direction: column; padding: 12px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .card:nth-child(odd) { border-right: 1px solid var(--line); }
+  .ph { position: relative; aspect-ratio: 3/4; background: var(--soft) repeating-linear-gradient(135deg, transparent 0 10px, rgba(29,78,216,.05) 10px 11px); display: grid; place-items: center; }
+  .ph-label { text-align: center; font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: #8a97b0; }
+  .ph-label b { display: block; font-family: 'Inter Tight', sans-serif; font-size: 18px; font-weight: 900; letter-spacing: -.02em; color: #c3cde0; margin-bottom: 4px; }
+  .fav { position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; display: grid; place-items: center; }
+  .fav svg { width: 20px; height: 20px; }
+  .fav.on { color: var(--blue); }
+  .fav.on svg path { fill: currentColor; }
+  .brand { margin-top: 10px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+  .name { font-size: 13px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+  .meta { display: flex; align-items: baseline; gap: 6px; margin-top: 8px; }
+  .price { font-weight: 900; font-size: 16px; letter-spacing: -.02em; }
+  .old { font-size: 11px; color: var(--muted); text-decoration: line-through; }
+  .size { margin-left: auto; font-family: var(--mono); font-size: 11px; font-weight: 700; }
+  .empty { grid-column: 1 / -1; text-align: center; font-family: var(--mono); font-size: 12px; text-transform: uppercase; color: var(--muted); padding: 48px 0; }
+
+  /* bottom sheets */
+  .overlay { position: fixed; inset: 0; background: rgba(10,20,40,.45); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 10; }
+  .overlay.open { opacity: 1; pointer-events: auto; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; max-height: 92vh; overflow-y: auto; background: #fff; border-top: 3px solid var(--blue); transform: translateY(100%); transition: transform .25s ease-out; z-index: 11; padding: 16px 16px 24px; }
+  .sheet.open { transform: none; }
+  .detail .ph { aspect-ratio: 1/1; }
+  .detail h2 { margin: 4px 0 0; font-size: 24px; font-weight: 900; letter-spacing: -.03em; }
+  .detail .price { font-size: 24px; }
+  .specs { display: grid; grid-template-columns: repeat(3, 1fr); margin: 16px 0; border-top: 1px solid var(--line); }
+  .spec { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .spec small { display: block; font-family: var(--mono); font-size: 10px; text-transform: uppercase; color: var(--muted); }
+  .spec b { font-size: 14px; }
+  .desc { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0; }
+  .btn { width: 100%; height: 52px; background: var(--blue); color: #fff; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: .06em; margin-top: 16px; }
+  .btn.ghost { background: var(--soft); color: var(--muted); }
+
+  .sheet h3 { margin: 0 0 8px; font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: -.02em; }
+  .row { display: flex; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .row .ph { width: 56px; flex: none; }
+  .row .info { flex: 1; min-width: 0; }
+  .row .brand { margin: 0; }
+  .row .rm { font-family: var(--mono); font-size: 11px; text-transform: uppercase; color: var(--muted); text-decoration: underline; }
+  .total { display: flex; justify-content: space-between; font-weight: 900; font-size: 20px; margin-top: 16px; text-transform: uppercase; }
+
+  .toast { position: fixed; left: 0; right: 0; top: 0; background: var(--text); color: #fff; padding: 14px 16px; font-family: var(--mono); font-size: 12px; text-transform: uppercase; z-index: 20; transform: translateY(-100%); transition: transform .25s; }
+  .toast.show { transform: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="top">
+    <div>
+      <div class="logo">Vestiq<span>/</span>Store</div>
+      <div class="sub">Ресейл одягу</div>
+    </div>
+    <div class="actions">
+      <button class="icon-btn" id="favBtn" aria-label="Обране">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.6-9.5-9.3C1 8.2 3.3 4.5 7 4.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.7 0 6 3.7 4.5 7.2C19.5 16.4 12 21 12 21z"/></svg>
+        <span class="badge" id="favCount"></span>
+      </button>
+      <button class="icon-btn" id="cartBtn" aria-label="Кошик">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16l-1.5 13h-13L4 7z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg>
+        <span class="badge" id="cartCount"></span>
+      </button>
+    </div>
+  </div>
+  <label class="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+    <input id="q" type="search" placeholder="Бренд, річ, розмір" aria-label="Пошук">
+  </label>
+  <nav class="chips" id="chips"></nav>
+</header>
+
+<div class="bar"><span id="found"></span><span>Ціни в ₴</span></div>
+<main class="grid" id="grid"></main>
+
+<div class="overlay" id="overlay"></div>
+<section class="sheet" id="detail"></section>
+<section class="sheet" id="cart"></section>
+<div class="toast" id="toast"></div>
+
+<script>
+// shortcut: демо-дані захардкоджені, замінити на API/таблицю, коли буде реальний асортимент
+const PRODUCTS = [
+  { id: 1, cat: 'Худі', brand: 'Stone Island', name: 'Худі з патчем', size: 'L', price: 4200, old: 7800, desc: 'Оригінал, бірки на місці. Без затяжок та плям.' },
+  { id: 2, cat: 'Куртки', brand: 'The North Face', name: 'Пуховик Nuptse 700', size: 'M', price: 6900, old: 12500, desc: 'Носився один сезон, пух рівномірний, всі блискавки працюють.' },
+  { id: 3, cat: 'Взуття', brand: 'Nike', name: 'Air Force 1 Low', size: '42', price: 3100, old: 4300, desc: 'Нові, у коробці. Колір білий.' },
+  { id: 4, cat: 'Футболки', brand: 'Carhartt WIP', name: 'Футболка Pocket', size: 'M', price: 950, old: 1800, desc: 'Щільна бавовна, не сідає після прання.' },
+  { id: 5, cat: 'Штани', brand: "Levi's", name: 'Джинси 501 Original', size: 'W32 L32', price: 1400, old: 3200, desc: 'Класичний прямий крій, легкі сліди носіння.' },
+  { id: 6, cat: 'Куртки', brand: 'Arc\'teryx', name: 'Вітровка Beta', size: 'S', price: 7400, old: 14000, desc: 'Gore-Tex, мембрана ціла, без пошкоджень.' },
+  { id: 7, cat: 'Худі', brand: 'Champion', name: 'Худі Reverse Weave', size: 'XL', price: 1600, old: 2900, desc: 'Вінтажна модель, приємно вицвілий колір.' },
+  { id: 8, cat: 'Взуття', brand: 'New Balance', name: '550 White Green', size: '41', price: 3500, old: 5200, desc: 'Вдягалися кілька разів, підошва без потертостей.' },
+  { id: 9, cat: 'Аксесуари', brand: 'Stüssy', name: 'Кепка Basic Logo', size: 'One size', price: 1100, old: 1700, desc: 'Нова, з бірками.' },
+  { id: 10, cat: 'Футболки', brand: 'Palace', name: 'Футболка Tri-Ferg', size: 'L', price: 2200, old: 3600, desc: 'Принт без тріщин, оригінал.' },
+];
+
+const tg = window.Telegram?.WebApp;
+const isTg = !!tg?.initData;
+const $ = id => document.getElementById(id);
+const uah = n => n.toLocaleString('uk-UA') + ' ₴';
+const code = p => 'VQ-' + String(p.id).padStart(4, '0');
+// заглушка замість фото, поки немає реальних знімків
+const ph = (p, label = true) => `<div class="ph">${label ? `<div class="ph-label"><b>VESTIQ</b>${p.cat} · ${code(p)}</div>` : ''}</div>`;
+
+const state = { cat: 'Усі', q: '', fav: new Set(), cart: new Set() };
+
+if (tg) {
+  tg.ready();
+  tg.expand();
+  tg.setHeaderColor?.('#ffffff');
+  tg.setBackgroundColor?.('#ffffff');
+  if (isTg) document.body.classList.add('tg');
+  tg.MainButton.setParams?.({ color: '#1d4ed8', text_color: '#ffffff' });
+  tg.MainButton.onClick(checkout); // MainButton показуємо лише в кошику
+  tg.BackButton.onClick(closeSheets);
+}
+
+const haptic = () => tg?.HapticFeedback?.impactOccurred('light');
+
+function renderChips() {
+  const cats = ['Усі', ...new Set(PRODUCTS.map(p => p.cat))];
+  const count = c => c === 'Усі' ? PRODUCTS.length : PRODUCTS.filter(p => p.cat === c).length;
+  $('chips').innerHTML = cats.map(c =>
+    `<button class="chip ${c === state.cat ? 'active' : ''}" data-cat="${c}">${c}<sup>${count(c)}</sup></button>`).join('');
+}
+
+function renderGrid(onlyFav = false) {
+  const q = state.q.trim().toLowerCase();
+  const list = PRODUCTS.filter(p =>
+    (!onlyFav || state.fav.has(p.id)) &&
+    (state.cat === 'Усі' || p.cat === state.cat) &&
+    (!q || (p.brand + ' ' + p.name + ' ' + p.cat + ' ' + p.size).toLowerCase().includes(q)));
+  $('found').textContent = (onlyFav ? 'Обране · ' : '') + `Знайдено: ${list.length}`;
+  $('grid').innerHTML = list.length ? list.map(p => `
+    <div class="card" data-id="${p.id}">
+      <div class="ph">
+        <div class="ph-label"><b>VESTIQ</b>${p.cat} · ${code(p)}</div>
+        <button class="fav ${state.fav.has(p.id) ? 'on' : ''}" data-fav="${p.id}" aria-label="В обране">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.6-9.5-9.3C1 8.2 3.3 4.5 7 4.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.7 0 6 3.7 4.5 7.2C19.5 16.4 12 21 12 21z"/></svg>
+        </button>
+      </div>
+      <div class="brand">${p.brand}</div>
+      <div class="name">${p.name}</div>
+      <div class="meta"><span class="price">${uah(p.price)}</span><span class="old">${uah(p.old)}</span><span class="size">${p.size}</span></div>
+    </div>`).join('') : '<div class="empty">Нічого не знайдено</div>';
+}
+
+function renderCounters() {
+  $('favCount').textContent = state.fav.size || '';
+  $('cartCount').textContent = state.cart.size || '';
+  $('favBtn').classList.toggle('fav-on', state.fav.size > 0);
+}
+
+const cartItems = () => PRODUCTS.filter(p => state.cart.has(p.id));
+const isOpen = id => $(id).classList.contains('open');
+
+function openSheet(id) {
+  closeSheets(false);
+  $(id).classList.add('open');
+  $('overlay').classList.add('open');
+  tg?.BackButton.show();
+}
+
+function closeSheets(refresh = true) {
+  ['detail', 'cart'].forEach(id => $(id).classList.remove('open'));
+  $('overlay').classList.remove('open');
+  tg?.BackButton.hide();
+  if (refresh) { tg?.MainButton.hide(); renderCounters(); }
+}
+
+function openDetail(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  const inCart = state.cart.has(id);
+  $('detail').innerHTML = `
+    <div class="detail">
+      ${ph(p)}
+      <div class="brand">${p.brand}</div>
+      <h2>${p.name}</h2>
+      <div class="meta"><span class="price">${uah(p.price)}</span><span class="old">${uah(p.old)}</span></div>
+      <div class="specs">
+        <div class="spec"><small>Розмір</small><b>${p.size}</b></div>
+        <div class="spec"><small>Категорія</small><b>${p.cat}</b></div>
+        <div class="spec"><small>Артикул</small><b>${code(p)}</b></div>
+      </div>
+      <p class="desc">${p.desc}</p>
+      <button class="btn ${inCart ? 'ghost' : ''}" data-add="${p.id}">${inCart ? 'Вже в кошику' : 'Додати в кошик'}</button>
+    </div>`;
+  openSheet('detail');
+  tg?.MainButton.hide();
+}
+
+function openCart() {
+  const items = cartItems();
+  const total = items.reduce((s, p) => s + p.price, 0);
+  $('cart').innerHTML = `
+    <h3>Кошик</h3>
+    ${items.length ? items.map(p => `
+      <div class="row">
+        ${ph(p, false)}
+        <div class="info"><div class="brand">${p.brand}</div><div class="name">${p.name} · ${p.size}</div><div class="price">${uah(p.price)}</div></div>
+        <button class="rm" data-rm="${p.id}">Видалити</button>
+      </div>`).join('') + `
+      <div class="total"><span>Разом</span><span>${uah(total)}</span></div>
+      ${isTg ? '' : '<button class="btn" id="checkout">Оформити замовлення</button>'}`
+    : '<p class="desc">Кошик порожній</p>'}`;
+  openSheet('cart');
+  if (tg && items.length) tg.MainButton.setText(`Оформити · ${uah(total)}`).show();
+  else tg?.MainButton.hide();
+}
+
+function checkout() {
+  // shortcut: демо — без відправки замовлення; потім tg.sendData або запит на бекенд
+  state.cart.clear();
+  closeSheets();
+  toast('Дякуємо! Менеджер зв’яжеться з вами');
+  tg?.HapticFeedback?.notificationOccurred('success');
+}
+
+function toast(text) {
+  const t = $('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-cat],[data-fav],[data-id],[data-add],[data-rm],#checkout');
+  if (!el) return;
+  if (el.dataset.cat) { state.cat = el.dataset.cat; renderChips(); renderGrid(); }
+  else if (el.dataset.fav) {
+    const id = +el.dataset.fav;
+    state.fav.has(id) ? state.fav.delete(id) : state.fav.add(id);
+    el.classList.toggle('on'); haptic(); renderCounters();
+  }
+  else if (el.dataset.add) {
+    const id = +el.dataset.add;
+    if (!state.cart.has(id)) { state.cart.add(id); haptic(); toast('Додано в кошик'); }
+    closeSheets();
+  }
+  else if (el.dataset.rm) { state.cart.delete(+el.dataset.rm); openCart(); renderCounters(); }
+  else if (el.id === 'checkout') checkout();
+  else if (el.dataset.id) openDetail(+el.dataset.id);
+});
+
+$('q').addEventListener('input', e => { state.q = e.target.value; renderGrid(); });
+$('overlay').addEventListener('click', () => closeSheets());
+$('cartBtn').addEventListener('click', openCart);
+$('favBtn').addEventListener('click', () => {
+  if (!state.fav.size) return toast('Обране порожнє');
+  state.cat = 'Усі'; state.q = ''; $('q').value = ''; renderChips();
+  renderGrid(true);
+});
+
+renderChips();
+renderGrid();
+renderCounters();
+</script>
+</body>
+</html>
